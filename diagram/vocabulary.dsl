@@ -2,7 +2,7 @@
  * This is a Design for Real-Time Vocabulary Quiz system
  *
 */
-workspace "Vocabulary Quiz System" "This is an Real-Time Vocabulary Quiz system." {
+workspace "Vocabulary Quiz System" "This is a Real-Time Vocabulary Quiz system." {
 
     model {
         user = person "User" "A learner who uses this system to answer questions in real-time." "User"        
@@ -29,14 +29,13 @@ workspace "Vocabulary Quiz System" "This is an Real-Time Vocabulary Quiz system.
                     answersController = component "Answers Controller" "Handles answer submission and validation." "Python"
                     scoringController = component "Scoring Controller" "Calculates and retrieves scores from the database." "Python"
                     leaderboardController = component "Leaderboard Controller" "Manages and retrieves real-time leaderboard standings." "Python"
-                    quizComponent = component "Quiz Logic Processoring" "Handles the core quiz logic." "Python"
+                    quizComponent = component "Quiz Logic Processing" "Handles the core quiz logic." "Python"
                 }
                 
                 realTimeServer  = container "Real-Time Server" "Manages real-time communication between clients and the server." "Manages real-time for Web App" "Python with Django Channels"
                 pushNotification = container "Push Notification Service" "Handles push notifications to mobile apps." "Firebase Cloud Messaging (FCM) for Android, Apple Push Notification Service (APNS) for iOS"
                 
-                
-                backgroundWorker = container "Background Worker" "Processes quiz logic, score updates, and leaderboard updates." "Python with Celery"{                    
+                backgroundWorker = container "Background Worker" "Processes quiz logic, score updates, and leaderboard updates." "Python with Celery" {                    
                     scoreUpdater = component "Score Updater" "Manages real-time score updates." "Python with Celery"
                     leaderboardUpdater = component "Leaderboard Updater" "Maintains and updates the real-time leaderboard." "Python with Celery"
                     notificationSender = component "Notification Sender" "Sends push notifications to users." "Python with Celery"
@@ -45,10 +44,9 @@ workspace "Vocabulary Quiz System" "This is an Real-Time Vocabulary Quiz system.
                 
                 database = container "Database" "Stores quiz data, user information, scores, and leaderboard standings." "MongoDB" "Database"
                 redis = container "Cache" "Handles real-time leaderboard updates and session management." "Redis" "Cache"
-                messageQueue = container "Message Queue" "Handles communication between apiApplication/realTimeServer/Notification Hub and Background Worker." "RabbitMQ"
+                messageQueue = container "Message Queue" "Handles communication between API Application, Real-Time Server, Notification Hub, and Background Worker." "RabbitMQ"
             }
         }
-    
 
         # relationships between people and software systems
         user -> vocabularyQuizSystem "Views Leaderboard, scoring, and answer the quiz"        
@@ -60,14 +58,14 @@ workspace "Vocabulary Quiz System" "This is an Real-Time Vocabulary Quiz system.
 
         singlePageApplication -> apiApplication "Make an API call to fetch the latest data (updated scores or leaderboard)."
         apiApplication -> singlePageApplication "Delivers the data to the user's web browser"
-        apiApplication -> messageQueue " processes the request, stores the answer, and places a message in the messageQueue for further processing"        
+        apiApplication -> messageQueue "Processes the request, stores the answer, and places a message in the messageQueue for further processing"
         
-        backgroundWorker -> messageQueue " picks up the message from the queue, processes the answer (e.g., validates, scores it), updates the database"
-        backgroundWorker -> realTimeServer "pushes a message to indicating that new data is available"
+        backgroundWorker -> messageQueue "Picks up the message from the queue, processes the answer (e.g., validates, scores it), updates the database"
+        backgroundWorker -> realTimeServer "Pushes a message to indicate that new data is available"
         backgroundWorker -> pushNotification "Push the content notification"
-        pushNotification -> mobileApp "Boardcast message to the device"
+        pushNotification -> mobileApp "Broadcast message to the device"
         
-        realTimeServer -> singlePageApplication "notify all connected clients about the updated data"
+        realTimeServer -> singlePageApplication "Notify all connected clients about the updated data"
 
         apiApplication -> redis "Retrieve or Save the data to the Redis"
         identityApplication -> redis "Retrieve or Save the token or short user to the Redis"
@@ -75,6 +73,7 @@ workspace "Vocabulary Quiz System" "This is an Real-Time Vocabulary Quiz system.
         identityApplication -> database "Retrieve or Save user info to the database"
         apiApplication -> database "Retrieve or Save the data"
         backgroundWorker -> database "Retrieve or Save the data"
+        backgroundWorker -> redis "Retrieve or Save the data"
 
         # relationships to/from components
         singlePageApplication -> signinController "Makes API calls to" "JSON/HTTPS"
@@ -95,19 +94,24 @@ workspace "Vocabulary Quiz System" "This is an Real-Time Vocabulary Quiz system.
 
         quizComponent -> realTimeServer "Connect to"
         quizComponent -> messageQueue "Send messages"
-        quizComponent -> redis "Retrive or Set"
+        quizComponent -> redis "Retrieve or Set"
         quizComponent -> database "Reads from and writes to" "SQL/TCP"
 
         scoreUpdater -> messageQueue "Read messages"
         scoreUpdater -> realTimeServer "Publish message to Websocket"
+        scoreUpdater -> database "Fetches updated score data from the database"
 
+        leaderboardUpdater -> messageQueue "Subscribes to leaderboard update events"
+        leaderboardUpdater -> database "Fetches updated leaderboard data from the database"
+        leaderboardUpdater -> redis "Updates the leaderboard data in Redis"
+        leaderboardUpdater -> realTimeServer "Publishes leaderboard update event"
 
-        signinController -> securityComponent "Uses"        
-        accountController -> securityComponent "Uses"        
-        registerController -> securityComponent "Uses"        
-        signoutController -> securityComponent "Uses"                
+        signinController -> securityComponent "Uses"
+        accountController -> securityComponent "Uses"
+        registerController -> securityComponent "Uses"
+        signoutController -> securityComponent "Uses"
         securityComponent -> database "Reads from and writes to" "SQL/TCP"
-        securityComponent -> redis "Retrive or Set"
+        securityComponent -> redis "Retrieve or Set"
     }
 
     views {
@@ -166,35 +170,38 @@ workspace "Vocabulary Quiz System" "This is an Real-Time Vocabulary Quiz system.
             autoLayout
             description "The component diagram for the Identity Application."
         }
-        
 
-        dynamic identityApplication "SignIn" "Summarises how the sign in feature works in the single-page application." {
+        dynamic identityApplication "SignIn" "Summarizes how the sign-in feature works in the single-page application." {
             singlePageApplication -> signinController "Submits credentials to"
             signinController -> securityComponent "Validates credentials using"
-            securityComponent -> redis "check user exist in the redis?"
-            securityComponent -> database "select * from users where username = ?"            
+            securityComponent -> redis "Checks user exists in Redis?"
+            securityComponent -> database "Select * from users where username = ?"            
             database -> securityComponent "Returns user data to"
             securityComponent -> signinController "Returns true if the hashed password matches"
             signinController -> singlePageApplication "Sends back an authentication token to"
             autoLayout
-            description "Summarises how the sign in feature works in the single-page application."
+            description "Summarizes how the sign-in feature works in the single-page application."
         }
 
-        dynamic apiApplication "DataFlow" "Summarises how data flows through the system from when a user joins a quiz to when the leaderboard is updated" {
+        dynamic apiApplication "DataFlow" "Summarizes how data flows through the system from when a user joins a quiz to when the leaderboard is updated" {
             singlePageApplication -> quizController "Submits quiz ID to"
             quizController -> quizComponent "Validates quiz ID"
-            quizComponent -> realTimeServer "Connect to and open a quiz session"
+            quizComponent -> realTimeServer "Connect to and open a quiz session using WebSockets"
             singlePageApplication -> answersController "User submits an answer"
-            answersController -> quizComponent "validates the answer, updates the score in the database"
-            quizComponent -> database "Update data to DB"
-            quizComponent -> redis "Update data to Redis"
-            quizComponent -> messageQueue "publishes the score update to the message queue"
-            scoreUpdater -> messageQueue "listens for score updates from the message queue"
-            scoreUpdater -> realTimeServer "updates the leaderboard to realtime server"
-            realTimeServer -> singlePageApplication "pushes the updated leaderboard to all connected clients."
+            answersController -> quizComponent "Validates the answer and publishes a score update event"
+            quizComponent -> messageQueue "Publishes the score update event"
+            scoreUpdater -> messageQueue "Subscribes to score update events"
+            scoreUpdater -> database "Fetches updated score data from the database"
+            scoreUpdater -> messageQueue "Publishes leaderboard update event"
+            leaderboardUpdater -> messageQueue "Subscribes to leaderboard update events"
+            leaderboardUpdater -> database "Fetches updated leaderboard data from the database"
+            leaderboardUpdater -> redis "Updates the leaderboard data in Redis"
+            leaderboardUpdater -> realTimeServer "Publishes leaderboard update event"
+            realTimeServer -> singlePageApplication "Pushes the updated leaderboard to all connected clients"
             autoLayout
-            description "Summarises how data flows through the system from when a user joins a quiz to when the leaderboard is updated"
-        }        
+            description "Summarizes how data flows through the system from when a user joins a quiz to when the leaderboard is updated"
+        }
+       
 
         styles {
             element "Person" {
