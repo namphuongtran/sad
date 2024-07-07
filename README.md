@@ -1,0 +1,1 @@
+Please refer to the sad.md file in the docs folder for detailed information about the System Design. The source code includes core components for Real-time Score Updates.
