@@ -37,6 +37,7 @@ This document provides a comprehensive architectural overview of the Real-Time Q
 5. Background Worker: Processes background tasks, such as scoring & leaderboard processing.
 6. Kafka: Acts as a message broker for inter-service communication.
 7. PostgreSQL: Serves as the primary database.
+8. Redis: Redis SortedSet Collection high-performance key-value database
 
 ## Data Flow
 
