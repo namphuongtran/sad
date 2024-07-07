@@ -1,3 +1,6 @@
 {
-    "c4.diagram.plantuml.enabled": true
+    "c4.diagram.plantuml.enabled": true,
+    "cSpell.enableFiletypes": [
+        "c4"
+    ]
 }

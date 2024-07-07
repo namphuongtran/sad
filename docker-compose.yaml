@@ -1,0 +1,35 @@
+volumes:
+  postgresql_data:  
+  redis_data:
+
+networks:
+  quiz:
+    name: quiz
+
+services:
+  quiz-postgresql:
+    image: postgres:11-alpine
+    container_name: quiz-postgresql
+    restart: unless-stopped
+    hostname: quiz-postgresql
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+
+  quiz-redis:
+    image: docker.io/bitnami/redis:7.2
+    container_name: quiz-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/bitnami/redis/data
+  
+  quiz-zoo:
+    image: confluentinc/cp-zookeeper:7.3.2
+    hostname: quiz-zoo
+    container_name: quiz-zoo    
+
+  quiz-kafka:
+    image: confluentinc/cp-kafka:7.3.2
+    hostname: quiz-kafka
+    container_name: quiz-kafka    
+    depends_on:
+      - quiz-zoo
